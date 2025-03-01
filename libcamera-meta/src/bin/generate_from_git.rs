@@ -432,7 +432,8 @@ mod generate_rust {
                 use crate::geometry::{{Rectangle, Size}};
                 #[allow(unused_imports)]
                 use libcamera_sys::*;
-
+                #[allow(unused_imports)]
+                use crate::geometry::Point;
 
                 "#;
 
