@@ -7,6 +7,8 @@ use crate::control_value::{ControlValue, ControlValueError};
 use crate::geometry::{Rectangle, Size};
 #[allow(unused_imports)]
 use libcamera_sys::*;
+#[allow(unused_imports)]
+use crate::geometry::Point;
 #[derive(Debug, Clone, Copy, Eq, PartialEq, TryFromPrimitive, IntoPrimitive)]
 #[repr(u32)]
 pub enum PropertyId {
