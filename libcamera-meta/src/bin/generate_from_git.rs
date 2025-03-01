@@ -275,7 +275,8 @@ mod generate_rust {
     fn generate_vec_impls(inner_type: &str) -> String {
         // Don't generate vec implementations for types that already have them
         match inner_type {
-            "Rectangle" | "Size" | "Point" => String::new(),
+            // Remove "Point" from this list since we need the implementation
+            "Rectangle" | "Size" => String::new(),
             _ => format!(
                 r#"
                 impl TryFrom<ControlValue> for Vec<{inner_type}> {{
