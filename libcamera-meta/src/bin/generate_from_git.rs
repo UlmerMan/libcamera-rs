@@ -273,28 +273,32 @@ mod generate_rust {
     }
 
     fn generate_vec_impls(inner_type: &str) -> String {
-        format!(
-            r#"
-            impl TryFrom<ControlValue> for Vec<{inner_type}> {{
-                type Error = ControlValueError;
-                fn try_from(value: ControlValue) -> Result<Self, Self::Error> {{
-                    match value {{
-                        ControlValue::Array(arr) => arr.into_iter()
-                            .map(|v| {inner_type}::try_from(v))
-                            .collect::<Result<Vec<_>, _>>()
-                            .map_err(|_| ControlValueError::TypeError),
-                        _ => Err(ControlValueError::TypeError),
+        // Don't generate vec implementations for types that already have them
+        match inner_type {
+            "Rectangle" | "Size" | "Point" => String::new(),
+            _ => format!(
+                r#"
+                impl TryFrom<ControlValue> for Vec<{inner_type}> {{
+                    type Error = ControlValueError;
+                    fn try_from(value: ControlValue) -> Result<Self, Self::Error> {{
+                        match value {{
+                            ControlValue::Vec(arr) => arr.into_iter()
+                                .map(|v| {inner_type}::try_from(v))
+                                .collect::<Result<Vec<_>, _>>()
+                                .map_err(|_| ControlValueError::TypeMismatch),
+                            _ => Err(ControlValueError::TypeMismatch),
+                        }}
                     }}
                 }}
-            }}
 
-            impl From<Vec<{inner_type}>> for ControlValue {{
-                fn from(val: Vec<{inner_type}>) -> Self {{
-                    ControlValue::Array(val.into_iter().map(ControlValue::from).collect())
+                impl From<Vec<{inner_type}>> for ControlValue {{
+                    fn from(val: Vec<{inner_type}>) -> Self {{
+                        ControlValue::Vec(val.into_iter().map(ControlValue::from).collect())
+                    }}
                 }}
-            }}
-        "#
-        )
+            "#
+            ),
+        }
     }
 
     pub enum ControlsType {
