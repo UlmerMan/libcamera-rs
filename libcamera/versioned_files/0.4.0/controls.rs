@@ -1,3 +1,4 @@
+use crate::geometry::Point;
 use std::ops::{Deref, DerefMut};
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 #[allow(unused_imports)]
