@@ -233,17 +233,17 @@ mod generate_rust {
         out
     }
 
-    fn to_rust_type(t: ControlType, size: &Option<Vec<ControlSize>>) -> String {
-        let inner = match t {
-            ControlType::Bool => "bool",
-            ControlType::Byte => "u8",
-            ControlType::Int32 => "i32",
-            ControlType::Int64 => "i64",
-            ControlType::Float => "f32",
-            ControlType::String => "String",
-            ControlType::Rectangle => "Rectangle",
-            ControlType::Size => "Size",
-            ControlType::Point => "Point",
+    fn to_rust_type(t: ControlType, size: &Option<Vec<ControlSize>>) -> (String, Option<String>) {
+        let (inner, vec_impl) = match t {
+            ControlType::Bool => ("bool", None),
+            ControlType::Byte => ("u8", None),
+            ControlType::Int32 => ("i32", None),
+            ControlType::Int64 => ("i64", None),
+            ControlType::Float => ("f32", None),
+            ControlType::String => ("String", None),
+            ControlType::Rectangle => ("Rectangle", Some(generate_vec_impls("Rectangle"))),
+            ControlType::Size => ("Size", Some(generate_vec_impls("Size"))),
+            ControlType::Point => ("Point", Some(generate_vec_impls("Point"))),
         };
 
         match size {
@@ -254,17 +254,46 @@ mod generate_rust {
                     if s.len() > 1 {
                         panic!("Dynamic length with more than 1 dimension is not supported");
                     } else {
-                        format!("Vec<{inner}>")
+                        (format!("Vec<{inner}>"), vec_impl)
                     }
                 } else {
-                    s.iter().fold(inner.to_string(), |ty, s| match s {
-                        ControlSize::Dynamic => panic!("Dynamic length with more than 1 dimension is not supported"),
-                        ControlSize::Fixed(len) => format!("[{ty}; {len}]"),
-                    })
+                    (
+                        s.iter().fold(inner.to_string(), |ty, s| match s {
+                            ControlSize::Dynamic => {
+                                panic!("Dynamic length with more than 1 dimension is not supported")
+                            }
+                            ControlSize::Fixed(len) => format!("[{ty}; {len}]"),
+                        }),
+                        None,
+                    )
                 }
             }
-            None => inner.to_string(),
+            None => (inner.to_string(), None),
         }
+    }
+
+    fn generate_vec_impls(inner_type: &str) -> String {
+        format!(
+            r#"
+            impl TryFrom<ControlValue> for Vec<{inner_type}> {{
+                type Error = ControlValueError;
+                fn try_from(value: ControlValue) -> Result<Self, Self::Error> {{
+                    match value {{
+                        ControlValue::Array(arr) => arr.into_iter()
+                            .map(|v| {inner_type}::try_from(v))
+                            .collect::<Result<Vec<_>, _>>(),
+                        _ => Err(ControlValueError::TypeError),
+                    }}
+                }}
+            }}
+
+            impl From<Vec<{inner_type}>> for ControlValue {{
+                fn from(val: Vec<{inner_type}>) -> Self {{
+                    ControlValue::Array(val.into_iter().map(ControlValue::from).collect())
+                }}
+            }}
+        "#
+        )
     }
 
     pub enum ControlsType {
@@ -306,7 +335,7 @@ mod generate_rust {
 
         for ctrl in controls.iter() {
             let ctrl_name = &ctrl.name;
-            let ctrl_type = to_rust_type(ctrl.typ, &ctrl.size);
+            let (ctrl_type, _vec_impl) = to_rust_type(ctrl.typ, &ctrl.size);
 
             out += &format_docstring(&ctrl.description, 0);
             if let Some(enumeration) = &ctrl.enumeration {
