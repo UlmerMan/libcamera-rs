@@ -1721,3 +1721,41 @@ pub fn make_dyn(
         }
     }
 }
+impl TryFrom<ControlValue> for Vec<Rectangle> {
+    type Error = ControlValueError;
+    fn try_from(value: ControlValue) -> Result<Self, Self::Error> {
+        match value {
+            ControlValue::Array(arr) => {
+                arr.into_iter()
+                    .map(|v| Rectangle::try_from(v))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|_| ControlValueError::TypeError)
+            }
+            _ => Err(ControlValueError::TypeError),
+        }
+    }
+}
+impl From<Vec<Rectangle>> for ControlValue {
+    fn from(val: Vec<Rectangle>) -> Self {
+        ControlValue::Array(val.into_iter().map(ControlValue::from).collect())
+    }
+}
+impl TryFrom<ControlValue> for Vec<Rectangle> {
+    type Error = ControlValueError;
+    fn try_from(value: ControlValue) -> Result<Self, Self::Error> {
+        match value {
+            ControlValue::Array(arr) => {
+                arr.into_iter()
+                    .map(|v| Rectangle::try_from(v))
+                    .collect::<Result<Vec<_>, _>>()
+                    .map_err(|_| ControlValueError::TypeError)
+            }
+            _ => Err(ControlValueError::TypeError),
+        }
+    }
+}
+impl From<Vec<Rectangle>> for ControlValue {
+    fn from(val: Vec<Rectangle>) -> Self {
+        ControlValue::Array(val.into_iter().map(ControlValue::from).collect())
+    }
+}

@@ -281,7 +281,8 @@ mod generate_rust {
                     match value {{
                         ControlValue::Array(arr) => arr.into_iter()
                             .map(|v| {inner_type}::try_from(v))
-                            .collect::<Result<Vec<_>, _>>(),
+                            .collect::<Result<Vec<_>, _>>()
+                            .map_err(|_| ControlValueError::TypeError),
                         _ => Err(ControlValueError::TypeError),
                     }}
                 }}
@@ -311,6 +312,8 @@ mod generate_rust {
         }
 
         let mut out = String::new();
+        let mut vec_impls = String::new();
+        let mut dyn_variants = String::new();
 
         let name = match ty {
             ControlsType::Control => "ControlId",
@@ -331,11 +334,14 @@ mod generate_rust {
         }
         out += "}\n";
 
-        let mut dyn_variants = String::new();
-
         for ctrl in controls.iter() {
             let ctrl_name = &ctrl.name;
-            let (ctrl_type, _vec_impl) = to_rust_type(ctrl.typ, &ctrl.size);
+            let (ctrl_type, maybe_vec_impl) = to_rust_type(ctrl.typ, &ctrl.size);
+
+            // Add vector implementations if any
+            if let Some(impl_code) = maybe_vec_impl {
+                vec_impls.push_str(&impl_code);
+            }
 
             out += &format_docstring(&ctrl.description, 0);
             if let Some(enumeration) = &ctrl.enumeration {
@@ -446,6 +452,9 @@ mod generate_rust {
         }}
     "#
         );
+
+        // Add vector implementations at the end of the file
+        out.push_str(&vec_impls);
 
         out
     }
