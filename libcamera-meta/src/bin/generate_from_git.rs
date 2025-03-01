@@ -423,19 +423,16 @@ mod generate_rust {
 
     pub fn generate_controls_file(controls: &[Control], ty: ControlsType) -> String {
         let header = r#"
-                use std::ops::{{Deref, DerefMut}};
-                use num_enum::{{IntoPrimitive, TryFromPrimitive}};
-                #[allow(unused_imports)]
-                use crate::control::{{Control, Property, ControlEntry, DynControlEntry}};
-                use crate::control_value::{{ControlValue, ControlValueError}};
-                #[allow(unused_imports)]
-                use crate::geometry::{{Rectangle, Size}};
-                #[allow(unused_imports)]
-                use libcamera_sys::*;
-                #[allow(unused_imports)]
-                use crate::geometry::Point;
-
-                "#;
+            use std::ops::{Deref, DerefMut};
+            use num_enum::{IntoPrimitive, TryFromPrimitive};
+            #[allow(unused_imports)]
+            use crate::control::{Control, Property, ControlEntry, DynControlEntry};
+            use crate::control_value::{ControlValue, ControlValueError};
+            #[allow(unused_imports)]
+            use crate::geometry::{Rectangle, Size, Point};
+            #[allow(unused_imports)]
+            use libcamera_sys::*;
+        "#;
 
         let file = format!("{header}\n{}", generate_controls(controls, ty));
         prettyplease::unparse(&syn::parse_file(&file).unwrap())
